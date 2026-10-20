@@ -1,0 +1,397 @@
+# Academic Research Skills para Claude Code
+
+[![Version](https://img.shields.io/badge/version-v3.23.1-blue)](https://github.com/Imbad0202/academic-research-skills/releases/tag/v3.23.1)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20696614-blue)](https://doi.org/10.5281/zenodo.20696614)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![Sponsor](https://img.shields.io/badge/sponsor-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee)](https://buymeacoffee.com/crucify020v)
+
+[English](README.md) | [简体中文版](README.zh-CN.md) | [繁體中文版](README.zh-TW.md) | [日本語版](README.ja-JP.md) | [한국어](README.ko-KR.md)
+
+Un conjunto completo de skills para Claude Code dedicadas a la investigación académica, que cubre todo el flujo desde la investigación hasta la publicación.
+
+**Instalación en 30 segundos** (Claude Code CLI / VS Code / JetBrains, v3.7.0+):
+
+```text
+/plugin marketplace add Imbad0202/academic-research-skills
+/plugin install academic-research-skills
+```
+
+Después prueba `/ars-plan` para revisar la estructura de tu artículo mediante diálogo socrático, o ve directamente a [Instalación rápida](#instalación-rápida) si necesitas los prerrequisitos y el flujo tradicional con enlaces simbólicos.
+
+> **La IA es tu copiloto, no el piloto.** Puede redactar borradores, incluido un artículo completo en el modo full, pero las decisiones son tuyas y el pipeline se detiene en cada etapa para que las confirmes. Se ocupa del trabajo pesado: buscar referencias, formatear citas, verificar datos, comprobar la coherencia lógica. Así puedes concentrarte en lo que de verdad requiere tu cabeza: definir la pregunta, elegir el método, interpretar qué significan los datos y decidir qué va después de «sostengo que». La autoría es tuya, y respondes de cada afirmación que envíes.
+>
+> A diferencia de un humanizador, esta herramienta no te ayuda a ocultar que has usado IA. Te ayuda a escribir mejor. Style Calibration aprende tu voz a partir de trabajos anteriores. Writing Quality Check detecta los patrones que hacen que un texto se sienta generado por una máquina. El objetivo es la calidad, no hacer trampa.
+
+### ¿Por qué un humano en el bucle y no la automatización completa?
+
+Lu et al. (2026, *Nature* 651:914-919) construyeron **The AI Scientist**: el primer sistema de investigación autónomo por completo que publica un artículo tras revisión ciega por pares en una venue de primer nivel de machine learning (workshop de ICLR 2025, puntuación 6.33/10 frente a una media de 4.87 en el workshop). Su sección de Limitaciones enumera los modos de fallo que hereda cualquier pipeline de investigación autónomo: errores de implementación, resultados alucinados, dependencia de atajos, reinterpretación de bugs como hallazgos, fabricación de metodología, frame-lock y citas alucinadas.
+
+ARS parte de la premisa de que **un investigador humano aumentado por IA evita esos modos de fallo mejor que cualquiera de los dos por separado**. Las puertas de integridad de la Etapa 2.5 y la Etapa 4.5 ejecutan una lista de bloqueo de 7 modos (consulta [`academic-pipeline/references/ai_research_failure_modes.md`](academic-pipeline/references/ai_research_failure_modes.md)); el revisor ofrece un modo de calibración opcional que mide su propio FNR/FPR contra un gold set proporcionado por el usuario.
+
+[**Zhao et al.**](https://arxiv.org/abs/2605.07723) (2026-05) auditó 111 M de referencias en 2,5 M de artículos de arXiv, bioRxiv, SSRN y PMC. Su estimación conservadora es de 146.932 citas alucinadas solo en 2025, con un punto de inflexión observado a mediados de 2024; para el emparejamiento bioRxiv-PMC reportan una persistencia del 85,3 % de preprint a publicación. El artículo describe como problema abierto el uso de «citas reales desplegadas para sostener afirmaciones que las referencias citadas no sostienen realmente». ARS v3.7.1 añadió trust-chain frontmatter para la procedencia de las fuentes; v3.7.3 añadió infraestructura de localizadores (anclas de cita en tres capas) para futuras auditorías a nivel de afirmación y muestra señales de riesgo advertidas en el momento de citar (ARS llama internamente «L3» a esa brecha de fidelidad entre afirmación y fuente; es terminología de ARS, no del artículo). v3.7.x responde a los hallazgos a escala de corpus de Zhao et al.; la evaluación a escala de corpus del propio ARS sigue siendo trabajo futuro.
+
+v3.8 cierra la segunda mitad de la brecha L3. v3.7.3 hizo que cada cita llevara un ancla de localizador; v3.8 añade una pasada de auditoría opcional (`ARS_CLAIM_AUDIT=1`) que recupera la fuente citada contra cada ancla y juzga si la afirmación está realmente sostenida. Cinco nuevas clases HIGH-WARN (claim-not-supported, negative-constraint-violation, fabricated-reference, anchorless, constraint-violation-uncited) bloquean mediante gate la salida de la hard gate terminal del formatter. Un runner de calibración se publica con un gold set sintético de 25 tuplas y umbrales de aceptación FNR<0,15 + FPR<0,10. Su test incluido ejecuta el runner con un juez simulado que devuelve las etiquetas del gold set, así que comprueba la herramienta y no un juez real; todavía no hay registrado ningún resultado de calibración con un juez real, y el plan de ramp-on espera a tenerlo, según la especificación de v3.8 §5.
+
+[**Ren et al.**](https://arxiv.org/abs/2607.13104) (2026, *Self-Improvements in Modern Agentic Systems: A Survey*) aporta una tercera ancla, a nivel de survey. Su síntesis sobre descubrimiento científico (§7.4) concluye que los agentes de descubrimiento no pueden verificar por sí mismos novedad, corrección o reproducibilidad y que pueden apoyarse en proxies débiles, que deben gestionar evidencia entre herramientas y literaturas heterogéneas y que plantean problemas de gobernanza: "la escritura científica también puede amplificar desinformación cuando la evidencia es débil". Sus capítulos sobre el bucle de generación (§5.1–§5.2) incluyen la auditoría humana y los anclas humanas conservadas entre las salvaguardas prácticas para bucles de evaluación autogenerados, y su capítulo histórico (§2.2) registra la forma más antigua de esa misma lección: el éxito práctico de EURISKO de Lenat dependía en gran medida de que el usuario actuara como señal externa de evaluación, podando la deriva improductiva de heurísticas; una limitación que el survey documenta como persistente en los sistemas agénticos modernos. ARS cita el survey como justificación de diseño de su postura de humano en el bucle, no como prueba empírica de que los pipelines con humano en el bucle superen a los autónomos; las mejoras accionables del survey para ARS se siguen en #539–#541 y #547–#550.
+
+[**Gartenberg et al.**](https://doi.org/10.1287/orsc.2026.ed.v37.n3) (2026, *Organization Science* 37(3):795-812, "More versus better") aporta una cuarta ancla, y la primera desde la revista. El AI Task Force de *Organization Science* puntuó todas las primeras presentaciones (6.957) y todas las reseñas en formato de texto (10.389) que la revista recibió entre enero de 2021 y febrero de 2026 con un clasificador comercial de escritura por IA y índices estándar de legibilidad. Los manuscritos puntuados como muy escritos por IA se leían peor en esos índices y se desk-rechazaban más a menudo; las reseñas puntuadas como más escritas por IA se inclinaban hacia la teoría y se alejaban de los datos; y los editores concluyen que las herramientas de IA actuales, amplificadas por los incentivos de publish-or-perish, "parecen empujar el sistema hacia un equilibrio de más bien que de mejor investigación". Su §5 contrasta la «rendición cognitiva» (Shaw & Nave, 2026, según se cita allí) con un uso centrado en el humano y pide a los autores que declaren cómo se produjo el manuscrito. La evidencia es observacional, agregada y de una sola revista, y el clasificador es un instrumento propietario. ARS cita el editorial como justificación de diseño para registrar el volumen como no-objetivo (consulta `POSITIONING.md`) y para el Collaboration Depth Observer y la escalera de fuerza de afirmación, no como evidencia sobre la salida de ARS; las mejoras accionables se siguen en #829–#833.
+
+[**Wang, Li et al.**](https://arxiv.org/abs/2609.07713) (2026-09, *The Emerging AI Paper-Review Arms Race: Adversarial Co-Evolution in Scholarly Publishing*, una revisión de 230 fuentes) aporta una quinta ancla, y la primera que trata la producción de investigación y la revisión por pares como un único sistema acoplado. Su escalera de autoridad evaluativa (§4.1) va desde la retroalimentación dirigida al autor, pasando por la asistencia al revisor y las reseñas oficiales por IA, hasta la puntuación y el apoyo a la decisión, con la observación de que la capacidad en un peldaño no justifica el uso en el siguiente; el panel simulado de ARS se sitúa por diseño en el peldaño más bajo (consulta `POSITIONING.md`). Dos de sus hallazgos dan forma a la hoja de ruta del revisor. Primero, según la revisión resume a Dycke & Gurevych (2026, §4.5), 391 ediciones que rompen las relaciones de soporte científico de un artículo no produjeron diferencias estadísticamente significativas en los aspectos, el sentimiento ni las puntuaciones de los revisores automáticos probados, en comparación con 540 controles neutrales respecto a la solidez, mientras que reescrituras solo de presentación, con la ciencia fija, movieron las puntuaciones de las reseñas por IA (§5.2); la conclusión del §9.2 es que una evaluación estática puede sobreestimar la fiabilidad de un revisor por IA una vez que los autores pueden observarlo y adaptarse a él. ARS sigue los controles pareados de la Ronda 1 correspondientes en #871 y los controles de señales de identidad del autor (§7.2) en #872; ambos son mediciones, no mecanismos nuevos. Segundo, su §9.1 cita a Brodeur et al. (2026, *PNAS* 123(22):e2524747123), un estudio aleatorizado en el que 288 investigadores en 103 equipos reprodujeron resultados publicados de ciencias sociales cuantitativas bajo tres condiciones: solo humanos, asistidos por IA (ChatGPT como herramienta colaborativa) y dirigidos por IA (ChatGPT con supervisión humana mínima). Los equipos solo humanos y los asistidos por IA reprodujeron el 94 % y el 91 %, los equipos dirigidos por IA el 37 %, y los equipos asistidos por IA detectaron menos errores de código graves que los equipos solo humanos. En ese estudio, por tanto, la asistencia de IA no verificó mejor que los humanos solos y la verificación dirigida por IA lo hizo mucho peor; ARS lo lee como una razón para mantener la verificación dirigida por humanos en cada punto de control, no como evidencia de que sus propios puntos de control o puertas de integridad sean eficaces. La revisión es una síntesis y no un experimento, su búsqueda estructurada se detiene el 2026-07-01 y la actualización dirigida posterior no repitió todas las consultas (§10), su evidencia de despliegue se concentra en un pequeño número de conferencias de IA/CS, entornos basados en OpenReview y revistas seleccionadas y su marco de «carrera armamentística» es una lente, no un hallazgo; ARS la cita como justificación de diseño, no como evidencia sobre la salida de ARS.
+
+v3.3 se inspiró en [**PaperOrchestra**](https://arxiv.org/abs/2604.05018) (Song, Song, Pfister & Yoon, 2026, Google): verificación con la API de Semantic Scholar, protocolo anti-fuga, verificación de figuras con VLM y seguimiento de la trayectoria de revisión. ARS implementa ahora esa última idea mediante trayectorias de criterios categóricas y ancladas en evidencia, en lugar de deltas de puntuación.
+
+---
+
+## Arquitectura y pipeline
+
+**👉 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — la vista completa del pipeline: diagrama de flujo, matriz etapa por etapa, flujo de acceso a datos, grafo de dependencias entre skills, puertas de calidad y lista de modos.
+
+El documento de arquitectura sustituye a la extensa descripción del pipeline que antes vivía aquí. Todo lo relativo a *qué se ejecuta en cada etapa* está ahora en un único sitio.
+
+## Instalación rápida
+
+**Prerrequisitos**
+
+- [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) (última versión; el empaquetado como plugin requiere versiones recientes)
+- `ANTHROPIC_API_KEY` exportada, o definida en la primera ejecución de `claude`
+- *Opcional:* Pandoc para DOCX, tectonic + Source Han Serif TC para PDF en APA 7.0 (la salida en Markdown funciona sin ninguno de los dos)
+- *Opcional (Python real):* solo lo necesitan el guard de write-scope y algunos comandos opcionales; las skills principales están guiadas por prompts. Los detalles, incluidas las notas para Windows sobre Git Bash y el marcador de posición de Python de la Microsoft Store, están en [docs/SETUP.md § Python (optional)](docs/SETUP.md#python-optional) (en inglés).
+
+> **¿Qué controles están activos en *tu* canal de instalación?** La disponibilidad varía según el canal de instalación. Consulta el mapa por canal: [docs/CONTROL_AVAILABILITY.md](docs/CONTROL_AVAILABILITY.md).
+
+**Instalación como plugin (v3.7.0+, recomendada):**
+
+```text
+/plugin marketplace add Imbad0202/academic-research-skills
+/plugin install academic-research-skills
+```
+
+**Comprueba que funciona:** ejecuta `/ars-plan` y describe un artículo en el que estés trabajando; ARS iniciará un diálogo socrático para definir la estructura de los capítulos. Como prueba de un solo disparo, prueba `/ars-lit-review "your topic"`.
+
+**👉 [docs/SETUP.md](docs/SETUP.md)** — guía completa: instalar Claude Code, configurar claves de API, Pandoc/tectonic opcionales para DOCX/PDF, verificación entre modelos (`ARS_CROSS_MODEL`) y seis métodos de instalación (plugin, skills de proyecto, skills globales, claude.ai Project, repositorio clonado e importación en Claude Science).
+
+**👉 [docs/DATA_FLOWS.md](docs/DATA_FLOWS.md)** — qué sale de tu máquina (resolutores bibliográficos, llamadas entre modelos opcionales con consentimiento explícito, la comprobación de actualizaciones del plugin), qué se guarda en caché localmente y durante cuánto tiempo, y cómo desactivar cada camino.
+
+**👉 [docs/RISK_REGISTER.md](docs/RISK_REGISTER.md)** — los riesgos permanentes que el conjunto conoce, qué controles existentes abordan cada uno, cuál es el estado de la evidencia detrás de esos controles y qué queda abierto.
+
+**¿Usas Claude Science?** Las cinco skills se importan directamente: **Skills → Import from GitHub**, pega `https://github.com/Imbad0202/academic-research-skills`, **Preview** y después **Import** (requiere la v3.14.0+ de este repositorio: el importador lee las rutas explícitas de skill en el manifiesto del marketplace). Las importaciones son capturas puntuales; vuelve a importar cuando ARS se actualice. Las skills importadas conservan la metodología de ARS (protocolos de investigación / escritura / revisión); la maquinaria específica de Claude Code —comandos de barra, hooks, orquestación de subagentes— no se transfiere. Consulta [docs/SETUP.md](docs/SETUP.md), Método 5, para más detalle.
+
+**¿Usas Pi?** Instala el wrapper comunitario mantenido dentro del árbol con `pi install git:github.com/Imbad0202/academic-research-skills`. Mantiene el contenido original de ARS como autoritativo y documenta la orquestación específica de Pi y las limitaciones de hooks. Consulta [`pi/README.md`](pi/README.md).
+
+**¿Usas Codex CLI?** Instala en su lugar la distribución hermana: [`Imbad0202/academic-research-skills-codex`](https://github.com/Imbad0202/academic-research-skills-codex) — el mismo contenido de workflow, empaquetado de forma nativa para Codex como una única skill `$academic-research-suite` con alias `ars-*`.
+
+**Plataformas e integraciones de terceros** que envuelven u hospedan ARS están listadas en [THIRD_PARTY.md](THIRD_PARTY.md) — enviadas por la comunidad y no revisadas ni avaladas por quien mantiene el proyecto.
+
+**Gobernanza:** quién decide, qué aporta y qué no aporta la revisión entre modelos, y la postura de fin de vida del proyecto se explican en [GOVERNANCE.md](GOVERNANCE.md); la notificación de problemas de seguridad y su triage, en [SECURITY.md](SECURITY.md).
+
+## Rendimiento y coste
+
+**👉 [docs/PERFORMANCE.md](docs/PERFORMANCE.md)** — presupuestos de tokens por modo, estimación del pipeline completo (unos 3–7 US$ por un artículo de 15k palabras a precios de lista de 2026-09, antes de descuentos de caché) y ajustes recomendados de Claude Code (Auto mode; Agent Team opcional).
+
+## Guías y artículos
+
+- [Academic Writing Shouldn't Be a Solo Act](https://open.substack.com/pub/edwardwu223235/p/academic-writing-shouldnt-be-a-solo?r=4dczl&utm_medium=ios) — recorrido completo del pipeline (en inglés)
+- [學術寫作不該是一個人的事：一套開源 AI 協作工具如何改變研究者的工作流](https://open.substack.com/pub/edwardwu223235/p/ai?r=4dczl&utm_medium=ios) — 完整使用指南（繁體中文）
+
+---
+
+## Funciones de un vistazo
+
+- **Deep Research** — equipo de investigación de 13 agentes con modo guiado socrático, revisión sistemática PRISMA, detección de intención, monitorización de la salud del diálogo, DA opcional entre modelos y verificación por API de Semantic Scholar.
+- **Academic Paper** — escritura de artículos con 12 agentes, con Style Calibration, Writing Quality Check, endurecimiento de LaTeX, visualización, coaching de revisión, conversión de citas, protocolo anti-fuga y verificación de figuras con VLM.
+- **Academic Paper Reviewer** — revisión multiperspectiva con 7 agentes y juicios narrativos atados a criterios y anclados en evidencia (Journal-Fit Reviewer + 3 revisores dinámicos + Devil's Advocate), protocolo de umbral de concesión, preservación de la intensidad de ataque, crítica y calibración opcionales entre modelos, matriz de trazabilidad R&R y restricción de solo lectura. Las revisiones en vivo actuales siguen siendo `NOT_CALIBRATED`; la calibración completa produce un perfil de candidato acotado, pero su aplicación en una revisión en vivo todavía no está conectada.
+- **Academic Pipeline** — orquestador de pipeline de 10 etapas con checkpoints adaptativos, verificación de afirmaciones, Material Passport, `repro_lock` opcional, verificación de integridad opcional entre modelos, refuerzo a mitad de conversación y comprobaciones de regresión narrativas criterio a criterio (el portador tipado de trayectorias queda aplazado).
+- **SR-Screener** — cribado de estudios guiado por protocolo para revisiones sistemáticas, de alcance y rápidas: dos revisores de IA cegados más un tercer revisor que resuelve discrepancias, códigos de exclusión ordenados, ninguna decisión por defecto, lotes reanudables, control de calidad (estudios semilla, revisión de exclusiones dudosas, kappa y PABAK), recuentos PRISMA 2020, grupos RIS para EndNote/Zotero y un `literature_corpus[]` para `academic-paper`. Las decisiones de la IA son un apoyo; el equipo de revisión las verifica.
+- **Metadatos de nivel de acceso a datos** (v3.3.2+) — cada skill declara `data_access_level` (`raw` / `redacted` / `verified_only`); lo aplica `scripts/check_data_access_level.py`. Patrón adaptado del automated-w2s-researcher de Anthropic (2026). Consulta [`shared/ground_truth_isolation_pattern.md`](shared/ground_truth_isolation_pattern.md).
+- **Anotación de tipo de tarea** (v3.3.2+) — cada skill declara `task_type` (`open-ended` o `outcome-gradable`). Todas las skills actuales de ARS son `open-ended`.
+- **Esquema de informes de benchmark** (v3.3.5+) — JSON Schema + lint para comparaciones de benchmark honestas. Consulta [`shared/benchmark_report_pattern.md`](shared/benchmark_report_pattern.md).
+- **Lockfile de reproducibilidad de artefactos** (v3.3.5+) — sub-bloque `repro_lock` opcional en el Material Passport. **Es documentación de configuración, no una garantía de repetición byte a byte**: las salidas de un LLM no son reproducibles. Consulta [`shared/artifact_reproducibility_pattern.md`](shared/artifact_reproducibility_pattern.md).
+- **Jerarquía de modelos** (#517, v3.16+) — interruptor opcional `ARS_MODEL_TIERING` con dos direcciones: `economy` (los agentes de tipo ejecución se despachan un nivel por debajo del modelo de la sesión, con suelo en la clase Opus) y `quality-boost` (los agentes de tipo juicio en las puertas de integridad y en el paso final de revisión suben al nivel frontera). Sin valor definido = comportamiento equivalente byte a byte al previo a #517. Consulta [`shared/model_tiering.md`](shared/model_tiering.md).
+- **Sobre canónico de traspaso entre modelos** (#527, v3.17+) — el camino de transporte de checkpoints a ciegas owner→dispatcher→owner (#523) tiene ahora un sobre `[CROSS-MODEL-HANDOFF v1]` estable a máquina, con una gramática Python normativa (`scripts/cross_model_handoff.py`) en lugar de una aplicación solo en prosa, que fija el enrutamiento de acuerdo / divergencia / resultado malformado en los tres propietarios de checkpoint. Consulta [`shared/cross_model_verification.md`](shared/cross_model_verification.md), §«Cross-model handoff envelope».
+- **Entrada de procedencia de experimentos** (#260) — el campo opcional `experiment_provenance[]` del Material Passport registra experimentos que el investigador ejecutó **externamente** (ARS nunca ejecuta experimentos), y las afirmaciones del manuscrito se unen a ellos mediante `claim_intent_manifest.planned_experiment_ids[]`. La puerta de integridad (Etapa 2.5/4.5) audita cada afirmación respaldada por experimento contra la procedencia declarada: `ALIGNED` / `OVERSTATED` / `NOT_SUPPORTED_BY_PROVENANCE` / `PROVENANCE_INSUFFICIENT`, **sin juzgar si el experimento en sí fue correcto**. Un `experiment_intake_declaration` fail-closed convierte «¿has ejecutado experimentos?» en una decisión explícita de la Etapa 1 (incluso las ejecuciones solo con literatura declaran `no_experiments_declared`). Consulta [`shared/handoff_schemas.md`](shared/handoff_schemas.md), §«Experiment Provenance Intake (#260)».
+
+**Límite de integridad y verificación:** ARS revisa el manuscrito y el proceso reportado, incluida la existencia de las citas, la alineación afirmación–fuente, la metodología declarada, la alineación experimento–resultado declarada, la fidelidad de figuras y tablas y la conformidad de reporte/proceso/paquete. Algunas comprobaciones se hacen por muestreo o mediante LLM. ARS **no** establece que los procedimientos se hayan ejecutado realmente, que los datos crudos sean auténticos o que los resultados se reproduzcan; una fabricación reportada de forma coherente puede pasar estas comprobaciones. Consulta [POSITIONING.md § Integrity checks and the empirical-work boundary](POSITIONING.md#integrity-checks-and-the-empirical-work-boundary).
+
+---
+
+## Escaparate: salida real del pipeline
+
+Consulta los artefactos completos de una ejecución real del pipeline: informes de revisión por pares, informes de verificación de integridad y el artículo final.
+
+> **Un registro de marzo de 2026, no el rendimiento actual.** Esta ejecución (del 2026-03-07 al 03-08) usó academic-pipeline v2.3, antes de que ARS añadiera la comprobación con Semantic Scholar en v3.3 y la puerta determinista de citas con cuatro índices en v3.11. Sus cifras describen esa versión, y las puertas actuales no se han medido con este artículo. La autoría figura a nombre de Claude (Anthropic) porque la persona investigadora lo pidió durante el experimento. El artículo no es una publicación de Anthropic, y la posición de ARS es que la herramienta no sustituye a quien investiga ni reclama la autoría (consulta [POSITIONING.md](POSITIONING.md#what-this-is-not)).
+
+**[Ver todos los artefactos del pipeline →](examples/showcase/)**
+
+| Artefacto | Descripción |
+|---|---|
+| [Final Paper (EN)](examples/showcase/full_paper_apa7.pdf) | Formateado en APA 7.0, compilado con LaTeX |
+| [Final Paper (ZH)](examples/showcase/full_paper_zh_apa7.pdf) | Versión en chino, APA 7.0 |
+| [Integrity Report — Pre-Review](examples/showcase/integrity_report_stage2.5.pdf) | Etapa 2.5: señaló 15 referencias con problemas (8 con errores bibliográficos, 6–8 probablemente fabricadas) + 3 errores estadísticos |
+| [Integrity Report — Final](examples/showcase/integrity_report_stage4.5.pdf) | Etapa 4.5: cero regresiones confirmadas |
+| [Peer Review Round 1](examples/showcase/stage3_review_report.pdf) | Journal-Fit Reviewer + 3 revisores + Devil's Advocate |
+| [Re-Review](examples/showcase/stage3prime_rereview_report.pdf) | Verificación tras las revisiones |
+| [Peer Review Round 2](examples/showcase/stage3_review_report_r2.pdf) | Revisión de seguimiento |
+| [Response to Reviewers](examples/showcase/response_to_reviewers_r2.pdf) | Respuesta puntual de los autores |
+| [Post-Publication Audit Report](examples/showcase/post_publication_audit_2026-03-09.pdf) | Auditoría de todas las referencias hecha aparte con Claude Code + WebSearch: 21 de las 68 referencias finales seguían con problemas tras 3 rondas de comprobaciones de integridad |
+
+---
+
+## Complemento: Experiment Agent
+
+Si tu investigación implica ejecutar experimentos (código o estudios con personas) antes de escribir, la skill [Experiment Agent](https://github.com/Imbad0202/experiment-agent) cubre el hueco entre la Etapa 1 (RESEARCH) de ARS y la Etapa 2 (WRITE).
+
+```
+ARS Stage 1 RESEARCH  →  RQ Brief + Methodology Blueprint
+        ↓
+  experiment-agent     →  run/manage experiments → validate results
+        ↓
+ARS Stage 2 WRITE     →  write paper with verified experiment results
+```
+
+**Qué hace**: ejecuta experimentos con código (Python, R, etc.) con monitorización en tiempo real, gestiona protocolos de estudios con personas mediante la lista de verificación ética IRB, interpreta estadística con detección de 11 tipos de falacia y verifica la reproducibilidad.
+
+**Cómo usarlos juntos**: pausa el pipeline de ARS después de la Etapa 1, ejecuta los experimentos en una sesión aparte de experiment-agent y devuelve los resultados (con el Material Passport) a la Etapa 2 de ARS. ARS no requiere ninguna modificación. Consulta el [README de experiment-agent](https://github.com/Imbad0202/experiment-agent) para las instrucciones de configuración.
+
+**Declaración de entrada en la Etapa 1 (#260)**: en la Etapa 1, ARS detecta si la ejecución llevará afirmaciones respaldadas por experimentos y fija un `experiment_intake_declaration` fail-closed en el Material Passport. Si ejecutaste experimentos externamente, el investigador introduce una entrada `experiment_provenance[]` por experimento (`experiment_id`, `repro_lock` anidado, `planned_vs_executed[]`, `negative_results[]`, `known_limitations[]`) y la declaración queda en `experiments_declared`; si no, queda en `no_experiments_declared`. La declaración es **obligatoria en todo passport posterior a #260**: una ejecución que no toca experimentos también declara `no_experiments_declared`, de modo que la puerta de integridad nunca puede saltarse en silencio por un bloque de procedencia olvidado. Los `experiment_id` se congelan en este punto de entrada; más adelante, los agentes de escritura los referencian mediante `planned_experiment_ids[]`.
+
+**Complemento del lado docente**: [Teaching Skills](https://github.com/YujxZJCN/teaching-skills) aplica la arquitectura de ARS (conjuntos de skills, contratos compartidos, puertas por fases, un Course Passport) al lado docente de la vida académica: diseño de cursos → lecciones → evaluación → impartición → reflexión; su modo `sotl` entrega los proyectos de investigación sobre el aula a ARS deep-research / academic-paper para la fase de publicación.
+
+---
+
+## Uso
+
+### Inicio rápido
+
+```
+# Start a full research pipeline
+You: "I want to write a research paper on AI's impact on higher education QA"
+
+# Start with Socratic guidance
+You: "Guide my research on AI in educational evaluation"
+
+# Write a paper with guided planning
+You: "Guide me through writing a paper on demographic decline"
+
+# Review an existing paper
+You: "Review this paper" (then provide the paper)
+
+# Check pipeline status
+You: "status"
+```
+
+### Skills individuales
+
+#### Deep Research (8 modos)
+
+```
+"Research the impact of AI on higher education"       → full mode
+"Give me a quick brief on X"                          → quick mode
+"Do a systematic review on X with PRISMA"             → systematic-review mode
+"Guide my research on X"                              → socratic mode (guided)
+"Fact-check these claims"                             → fact-check mode
+"Do a literature review on X"                         → lit-review mode
+"Compare these papers in WHY/HOW/WHAT format"         → three-way-scan mode
+"Review this paper's research quality"                → review mode
+```
+
+#### Academic Paper (11 modos)
+
+```
+"Write a paper on X"                                  → full mode
+"Guide me through writing a paper"                    → plan mode (guided)
+"Build a paper outline"                               → outline-only mode
+"I have a draft, here are reviewer comments"          → revision mode
+"Parse these reviewer comments into a roadmap"        → revision-coach mode
+"Write an abstract for this paper"                    → abstract-only mode
+"Turn this into a literature review paper"            → lit-review mode
+"Convert to LaTeX" / "Convert citations to IEEE"      → format-convert mode
+"Check citations"                                     → citation-check mode
+"Generate an AI disclosure statement for NeurIPS"     → disclosure mode
+"Audit my rebuttal draft against the reviews"         → rebuttal-audit mode
+```
+
+#### Academic Paper Reviewer (6 modos)
+
+```
+"Review this paper"                                   → full mode (Journal-Fit Reviewer + R1/R2/R3 + Devil's Advocate)
+"Quick assessment of this paper"                      → quick mode
+"Guide me to improve this paper"                      → guided mode
+"Check the methodology"                               → methodology-focus mode
+"Verify the revisions"                                → re-review mode
+"Calibrate this reviewer against my gold set"         → calibration mode
+```
+
+#### Academic Pipeline (orquestador)
+
+```
+"I want to write a complete research paper"           → full pipeline from Stage 1
+"I already have a paper, review it"                   → mid-entry at Stage 2.5 (integrity first)
+"I received reviewer comments"                        → mid-entry at Stage 4
+```
+
+> El pipeline termina con la **Etapa 6: Process Summary**, que genera automáticamente un registro del proceso de creación del artículo con una evaluación de calidad de la colaboración en 6 dimensiones (puntuación 1–100).
+
+#### SR-Screener (8 modos)
+
+```
+"Turn my proposal into a screening protocol"          → protocol mode
+"Is this abstract eligible for my review?"            → quick mode (triaje con un solo revisor)
+"Pilot the screening with my seed studies"            → pilot mode
+"Screen these database exports"                       → ta-screen mode
+"Screen the full texts of the advanced records"       → ft-screen mode
+"Adjudicate the conflicts in my Rayyan export"        → adjudicate mode
+"Double-check my exclusions"                          → audit mode
+"Give me the PRISMA numbers for the screening"        → report mode
+```
+
+### Idiomas soportados
+
+- **Chino tradicional** (繁體中文) — valor por defecto cuando el usuario escribe en chino
+- **Inglés** — valor por defecto cuando el usuario escribe en inglés
+- Resúmenes bilingües (chino + inglés) para artículos académicos
+
+> **¿Usas otro idioma?** El modo Socratic (deep-research) y el modo Plan (academic-paper) usan **activación por intención**: detectan el significado de tu solicitud, no palabras clave concretas. Por eso funcionan en **cualquier idioma** sin modificar nada.
+>
+> Sin embargo, la sección general `Trigger Keywords` (la que decide si la skill se activa o no) sigue listando palabras clave en inglés y en chino tradicional. Si ves que la skill no se activa de forma fiable en tu idioma, puedes añadir las palabras clave de tu idioma a la sección `### Trigger Keywords` de cada archivo `SKILL.md` para mejorar la confianza de la coincidencia.
+
+### Formatos de cita soportados
+
+- APA 7.0 (por defecto, incluidas las reglas de cita en chino)
+- Chicago (Notas y Autor-Fecha)
+- MLA
+- IEEE
+- Vancouver
+
+### Estructuras de artículo soportadas
+
+- IMRaD (investigación empírica)
+- Revisión bibliográfica temática
+- Análisis teórico
+- Estudio de caso
+- Policy brief
+- Artículo de congreso
+
+---
+
+## Detalle de las skills
+
+Las responsabilidades por agente y los artefactos por etapa viven ahora en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Los números de versión quedan anclados aquí para que los metadatos de cada release estén en un solo sitio.
+
+### Deep Research (v2.12.1)
+
+Equipo de investigación de 13 agentes. Modos: full, quick, review, lit-review, three-way-scan, fact-check, socratic, systematic-review. Roster completo de agentes y artefactos: consulta ARCHITECTURE.md §3.
+
+### Academic Paper (v3.3.1)
+
+Pipeline de escritura de artículos con 12 agentes. Modos: full, plan, outline-only, revision, revision-coach, abstract-only, lit-review, format-convert, citation-check, disclosure, rebuttal-audit. Salida: MD + DOCX (mediante Pandoc cuando está disponible) + LaTeX (clase `apa7` de APA 7.0 / IEEE / Chicago) → PDF vía tectonic. Roster completo de agentes y responsabilidades por fase: consulta ARCHITECTURE.md §3.
+
+### Academic Paper Reviewer (v1.11.1)
+
+Revisión multiperspectiva con 7 agentes y **juicios narrativos atados a criterios**. Modos: full, re-review, quick, methodology-focus, guided, calibration. Las revisiones en vivo actuales y los paquetes Schema 6 siguen siendo `NOT_CALIBRATED`; la calibración completa puede producir un perfil de candidato acotado, pero su aplicación a una revisión en vivo no está conectada. Ninguna puntuación total se mapea a Accept, Minor Revision, Major Revision o Reject. La frontera entre el panel de la primera ronda y el despacho de re-review regido por contrato está en ARCHITECTURE.md §3, Stage 3 / Stage 3'.
+
+### Academic Pipeline (v3.23.1)
+
+Orquestador de 10 etapas con verificación de integridad, revisión en dos fases, coaching socrático y evaluación de la colaboración. Reglas del pipeline (protocolo que siguen los agentes, no garantías en tiempo de ejecución): cada etapa requiere un checkpoint de confirmación del usuario; la verificación de integridad (Etapa 2.5 + 4.5) es OBLIGATORIA y sin bypass no registrado (toda excepción requiere que quede registrada la justificación del usuario para la Etapa 6); la Matriz de Trazabilidad R&R (Schema 11) vincula cada observación de la revisión con el cambio que declara el equipo autor y registra si la re-revisión lo verificó. v3.4 añadió el Compliance Agent (PRISMA-trAIce + RAISE) en las Etapas 2.5 / 4.5. v3.5 añade el **Collaboration Depth Observer** (`collaboration_depth_agent`, solo advisory, nunca bloquea) en cada checkpoint FULL/SLIM y al completar el pipeline. Las puertas de integridad OBLIGATORIAS (2.5 / 4.5) saltan explícitamente el observador para que las comprobaciones de cumplimiento no queden diluidas. Basado en Wang & Zhang (2026), IJETHE 23:11. Matriz etapa por etapa con agentes, artefactos y puertas: consulta ARCHITECTURE.md §3.
+
+### SR-Screener (v1.0.0)
+
+Cribado de estudios con 4 agentes entre `deep-research` (pregunta, protocolo, búsqueda) y `academic-paper` (redacción de la revisión). Modos: protocol, quick, pilot, ta-screen, ft-screen, adjudicate, audit, report. Dos subagentes revisores cegados (solo Read y Grep) evalúan cada registro con el protocolo que confirmó el usuario, un tercer revisor resuelve los conflictos entre avanzar y excluir, y scripts de Python que solo usan la biblioteca estándar analizan exportaciones RIS / PubMed .nbib / Web of Science / CSV, eliminan duplicados, agrupan en lotes, combinan y generan el registro de cribado, los grupos RIS, los recuentos PRISMA 2020, un borrador de métodos con campos `[TO COMPLETE]` y un archivo `literature_corpus[]`. Reglas que siguen los agentes (no garantías en tiempo de ejecución): ningún registro se criba antes de que el usuario confirme el protocolo, ninguna llamada fallida se convierte en una exclusión por defecto y el equipo de revisión verifica las decisiones antes de informar las cifras. Véase [`sr-screener/SKILL.md`](sr-screener/SKILL.md).
+
+---
+
+## Optimizaciones de v3.0: lo que descubrimos sobre los límites estructurales de la IA
+
+### Qué pasó
+
+Mientras usaba ARS para escribir un artículo de reflexión sobre la IA en la educación superior, me encontré con tres problemas estructurales que ninguna cantidad de prompt engineering arreglaba:
+
+1. **Frame-lock**: pedí a la IA que ejecutara un debate de devil's advocate contra su propia tesis. Lo hizo: cuatro rondas, cada una más refinada que la anterior. Pero cada ronda se quedó dentro del marco que yo había definido. El DA atacaba argumentos, nunca premisas. Nunca preguntó «¿estamos discutiendo la pregunta correcta?». Es el mismo patrón que causó la tasa de error del 31 % en citas en la prueba de estrés de v2.7: la IA que verifica y la IA que generan comparten el mismo marco cognitivo.
+
+2. **Sycophancy bajo presión**: cada vez que cuestionaba los ataques del DA, este cedía demasiado rápido. Retiraba hallazgos más deprisa de lo que los lanzaba. El entrenamiento del modelo premia la armonía conversacional, así que «el usuario ha replicado» se trataba como evidencia de que el ataque era equivocado, cuando muchas veces solo significaba que el usuario era persistente.
+
+3. **Detección errónea de intención**: el Socratic Mentor intentaba constantemente converger y producir entregables («¿quieres que lo escriba?») cuando yo todavía estaba explorando. No distinguía «el usuario quiere una discusión filosófica profunda» de «el usuario quiere un brief de pregunta de investigación». Ambos parecen implicación, pero requieren comportamientos opuestos de la IA.
+
+### Qué cambiamos (v3.0)
+
+**Devil's Advocate — Protocolo de umbral de concesión** (`deep-research` + `academic-paper-reviewer`)
+- El DA ahora debe puntuar cada réplica en una escala del 1 al 5 antes de responder
+- La concesión solo se permite con puntuación ≥4 (la réplica aborda directamente el ataque central con evidencia)
+- Puntuación ≤3: mantener la posición y reformular el ataque original
+- Reglas anti-sycophancy: sin concesiones consecutivas, seguimiento de la tasa de concesión y detección de frame-lock después de cada checkpoint
+
+**Socratic Mentor — Capa de detección de intención** (`deep-research`)
+- Clasifica la intención del usuario como exploratoria o orientada a un objetivo al inicio del diálogo y cada 3 turnos
+- Modo exploratorio: desactiva la auto-convergencia, sube el máximo de rondas a 60 y prohíbe preguntas del tipo «¿quieres que lo resuma?»
+- Modo orientado a objetivo: comportamiento de convergencia estándar
+- Reglas de anti-cierre-prematuro: en modo exploratorio, es el usuario quien decide cuándo parar
+
+**Socratic Mentor — Indicador de salud del diálogo** (`deep-research`)
+- Autoevaluación silenciosa cada 5 turnos en tres dimensiones: acuerdo persistente, evitación del conflicto y convergencia prematura
+- Inyecta preguntas desafiantes automáticamente cuando detecta un patrón de acuerdo
+- Invisible para el usuario (para evitar que se manipule), pero el log queda disponible para revisarlo después de la sesión
+
+### Por qué importa
+
+Estas optimizaciones no resuelven los límites estructurales de la IA: hacen que esos límites sean visibles y manejables. El DA seguirá acabando por ceder si se le empuja lo suficiente. El Socratic Mentor seguirá teniendo cierto sesgo de convergencia. Pero ahora hay checkpoints explícitos que frenan la sycophancy, obligan al DA a justificar sus concesiones e impiden que el Mentor cierre antes de que el usuario esté listo.
+
+La lección más profunda: la alfabetización en IA no consiste en aprender a usar la IA como herramienta, seguir reglas de ética o temer a los riesgos de la IA. Consiste en relacionarse con la IA con la suficiente profundidad como para descubrir tú mismo sus límites estructurales, y en el proceso los tuyos propios.
+
+---
+
+## Licencia
+
+Este trabajo está publicado bajo [CC-BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
+
+**Eres libre de:**
+- Compartir — copiar y redistribuir el material
+- Adaptar — remezclar, transformar y crear a partir del material
+
+**Bajo las siguientes condiciones:**
+- **Atribución** — debes reconocer adecuadamente la autoría
+- **NoComercial** — no puedes usar el material con fines comerciales
+
+**Formato de atribución:**
+```
+Based on Academic Research Skills by Cheng-I Wu
+https://github.com/Imbad0202/academic-research-skills
+```
+
+---
+
+## Contribuyentes
+
+**Cheng-I Wu** (吳政宜) — Autor y mantenedor
+
+**[aspi6246](https://github.com/aspi6246)** — Contribuyente. La optimización de v3.1 se inspiró en patrones de [Claude-Code-Skills-for-Academics](https://github.com/aspi6246/Claude-Code-Skills-for-Academics): patrón de restricción de solo lectura, codificación de anti-patrones como elemento de diseño de primera clase, enfoque de marcos cognitivos (enseñar «cómo pensar» y no solo procedimientos) y filosofía de skills ligeras.
+
+**[mchesbro1](https://github.com/mchesbro1)** — Contribuyente. Propuso y redactó originalmente la IS Basket of 8 journals para `academic-paper-reviewer/references/top_journals_by_field.md` ([Issue #5](https://github.com/Imbad0202/academic-research-skills/issues/5)).
+
+**[cloudenochcsis](https://github.com/cloudenochcsis)** — Contribuyente. Amplió la sección de IS de la *Basket of 8* al completo *Senior Scholars' Basket of 11*, añadiendo *Decision Support Systems*, *Information & Management* e *Information and Organization* ([Issue #7](https://github.com/Imbad0202/academic-research-skills/issues/7), [PR #8](https://github.com/Imbad0202/academic-research-skills/pull/8)). Procedente de la [AIS Senior Scholars' List of Premier Journals](https://aisnet.org/research/seniorscholarsbasket/).
+
+**[eltociear](https://github.com/eltociear)** (Ikko Eltociear Ashimine) — Contribuyente. Tradujo el README al japonés ([`README.ja-JP.md`](README.ja-JP.md)) ([PR #161](https://github.com/Imbad0202/academic-research-skills/pull/161)).
+
+**[xpfo-go](https://github.com/xpfo-go)** (xpfo) — Contribuyente. Tradujo el README al chino simplificado ([`README.zh-CN.md`](README.zh-CN.md)) ([PR #181](https://github.com/Imbad0202/academic-research-skills/pull/181)).
+
+**[devCharlotte](https://github.com/devCharlotte)** — Contribuyente. Tradujo el README al coreano ([`README.ko-KR.md`](README.ko-KR.md)) ([PR #469](https://github.com/Imbad0202/academic-research-skills/pull/469)).
+
+**[Yaobin29](https://github.com/Yaobin29)** — Contribuyente. Propuso herramientas de respuesta a revisores en [PR #433](https://github.com/Imbad0202/academic-research-skills/pull/433); el modo `three-way-scan` de `deep-research` y el modo `rebuttal-audit` de `academic-paper` (rescatados del concepto `audit` de ese PR) se integraron a partir de esa contribución en v3.12.1.
+
+**[ktao732084-arch](https://github.com/ktao732084-arch)** — Contribuyente. Amplió el sistema de disclosure de `academic-paper` con nueve destinos de política de publicaciones médicas, recogida de hechos obligatorios específica por destino y renderizado standalone fail-closed ([Issue #596](https://github.com/Imbad0202/academic-research-skills/issues/596), [PR #599](https://github.com/Imbad0202/academic-research-skills/pull/599)); amplió la referencia de reporte clínico EQUATOR con guías condensadas de CARE, STARD y TRIPOD+AI más una secuencia de ruteo por diseño de estudio fail-closed ([Issue #594](https://github.com/Imbad0202/academic-research-skills/issues/594), [PR #601](https://github.com/Imbad0202/academic-research-skills/pull/601)); y diseñó y aportó el resolutor standalone de literatura en chino, su protocolo de API y el conjunto de fixtures de transporte sintéticas ([Issue #595](https://github.com/Imbad0202/academic-research-skills/issues/595), [PR #600](https://github.com/Imbad0202/academic-research-skills/pull/600)).
+
+---
+
+## Registro de cambios
+
+Aquí solo se resumen las tres versiones más recientes. El historial completo está en [CHANGELOG.md](CHANGELOG.md) (en inglés). Los resúmenes en español hasta la v3.21.2 se conservan congelados en [docs/changelog-archive/es-ES.md](docs/changelog-archive/es-ES.md) y no se actualizarán.
+
+### v3.23.1 (2026-10-16) — Reparaciones del guard de write-scope, lectura de CSV según RFC 4180 en sr-screener y actualización de modelos (Gemini 4 Argon)
+
+> **Reparaciones y actualización de modelos; no hay skill nueva y no se afirma ninguna mejora de precisión ni de rendimiento:** v3.23.1 cierra dos rutas del guard de write-scope que dejaban pasar escrituras sin comprobación, una para agents despachados por el plugin y otra para el `timeout.exe` integrado de Windows (#972), y la documentación indica ahora dónde actúa el guard (#974). `sr-screener` lee las exportaciones CSV con las reglas de comillas de RFC 4180 en lugar de reglas deducidas de una muestra (#979). Gemini 4 Argon figura como verificador provisional y como id de Google recomendado; `gemini-3.1-pro-preview` sigue validated (#980). El núcleo de enrutamiento indica que un token `[direct-mode]` a mitad de mensaje no es la vía de escape (#892); en una prueba de humo con instalación de plugin, Claude Fable 5.1 siguió aplicando el token en 3 de 6 sesiones (6 de 6 antes), por lo que no se cumple la regla de aceptación y #892 sigue abierto. Hay reparaciones menores de lint y de Windows aportadas por colaboradores externos (#956, #963, #965, #977), y `THIRD_PARTY.md` incluye md-to-word (#969).
+
+### v3.23.0 (2026-10-03) — `sr-screener` como quinta skill, reparaciones tras recorrer el pipeline sobre el papel y refuerzo de evidencias y registros
+
+> **Una skill nueva y reparaciones de comportamiento halladas al leer de principio a fin una ejecución completa del pipeline; los cambios a nivel de prompt no se han medido y `sr-screener` no afirma ninguna precisión de cribado:** v3.23.0 añade `sr-screener` (#919, contribuida por @erfanz97), una quinta skill que convierte el protocolo de una revisión en criterios de elegibilidad que el usuario confirma y criba títulos/resúmenes y textos completos con dos subagentes revisores que no conocen el juicio del otro y un adjudicador; sus tests usan registros sintéticos, y sus exportaciones a hoja de cálculo neutralizan el texto de fórmulas (#951). Un recorrido sobre el papel de una ejecución por defecto del pipeline (#925-#929) cambió lo que hace esa ejecución: la Audit Artifact Gate de v3.6.7 pasa a ser opcional, se pregunta una sola vez al investigador si el artículo informa de experimentos propios, las restricciones fijadas para toda la ejecución se guardan con las palabras del usuario y se citan en cada envío posterior al que se aplican (en las etapas de revisión actúan en los checkpoints), las puertas de integridad siguen un único conjunto de reglas y registran las fuentes tras un muro de pago como notas, las etapas 5 y 6 producen solo los archivos pedidos, y los interruptores opcionales muestran en la etapa 4.5 lo que la etapa 5 rechazaría. Los checkpoints de las etapas 2.5 y 4.5 reproducen las filas de evidencia desde una carpeta que nombra el orchestrator (#933, #947, #948), una fuente que la puerta considera fabricada queda fuera de las revisiones posteriores (#936), y los lectores de registros informan de errores de análisis sin citar el archivo (#898, #945). Cambios menores: las salidas de lectura indican cómo puede fallar el método de cada fuente (#916), una nota en un punto fijo recuerda que la forma de la revisión bibliográfica la decide el autor (#921), Schema 1 alineado con su productor (#938) y `/ars-citation-check` hereda el modelo de la session (#912).
+
+### v3.22.2 (2026-09-25) — Registro de ejecución y comprobación de traspaso, comprobación de siglas, frontera instrucción/datos ampliada y reparaciones de enrutamiento y de portada
+
+> **Dos comprobaciones deterministas fijadas por tests sintéticos; los cambios a nivel de prompt no se han medido:** v3.22.2 añade un registro de ejecución (#887). Cuando una ejecución del pipeline tiene un archivo passport, el orquestador añade a un registro local, junto al passport, las instrucciones iniciales del usuario, la pregunta de cada checkpoint y la respuesta del usuario con sus palabras exactas, los recibos de los pasos y los hashes de archivos. Tras una compactación, una reanudación o el retorno de un subagente, `scripts/run_ledger.py report` compara el registro con lo que afirma el resumen o el informe y lista las diferencias; ahora imprime esa comprobación de traspaso por sí mismo, en inglés o en chino tradicional, y calcula el hash de los archivos que nombra una entrada cuando se escribe (#898). El registro guarda las palabras exactas del usuario, y `docs/DATA_FLOWS.md` lo lista e indica cómo borrarlo. La versión añade además `scripts/check_acronyms.py` (#849, propuesto por @reiropke), que, sin llamar a ningún modelo, informa de siglas no definidas, definidas después de su primer uso o definidas dos veces; los prompts hacen que la sesión que llama lo ejecute sobre los borradores y resúmenes guardados, y en una revisión el informe se adjunta al final de la Editorial Decision Letter como anexo orientativo del que no se nutren la decisión, la hoja de ruta de revisión ni los criterios de re-revisión. Tests sintéticos fijan ambos scripts; no se ha medido si las ejecuciones escriben las entradas del registro ni si llaman a la comprobación. La frontera instrucción/datos alcanza ahora el texto de terceros en los despachos y en las importaciones de passport (#890), el texto que un receptor lee con sus propias llamadas a herramientas y la sesión principal de cada skill (#894); un lint fija cada copia y su efecto no se ha medido (el prompt opcional del juez de claim-audit cambia con ella, así que no se reutilizan los veredictos en caché del prompt anterior). Reparaciones: el núcleo de enrutamiento llega a las instalaciones como plugin y como copia de skills (#892); una petición explícita sigue siendo explícita aunque falte la entrada habitual del modo (#889); `/ars-lit-review` ya no desvía a otro flujo una ejecución en curso (#897); el coach de revisión deja la revisión por pares fuera de la variante de correspondencia con comités (#854); el orquestador limita la salida «autoritativa» de una skill a la titularidad del entregable (#888); y la portada y el showcase coinciden ahora con sus fuentes (#908). Los resultados de enrutamiento provienen de una sesión por fixture, una prueba preliminar y no una tasa. Un esquema nuevo describe el registro; no cambia ningún esquema existente, ni el modelo de ningún comando, ni ningún ajuste de esfuerzo.
